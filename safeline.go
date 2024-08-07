@@ -150,7 +150,6 @@ func getResponseData(responseJson string) (data map[string]interface{}, dateErr 
 
 	responseMap := responseInfo.(map[string]interface{})
 	repDataMsg := responseMap["msg"]
-	fmt.Println("repDataMsg: ", repDataMsg)
 	if repDataMsg != nil {
 		if repDataMsg != "" {
 			debugLog(repDataMsg)
@@ -189,7 +188,11 @@ func getCsrfToken() string {
 		errorLog("获取获取csrf_token接口调用异常")
 		return ""
 	}
-	dataMap, _ := getResponseData(csrfTokenJson)
+	dataMap, dateErr := getResponseData(csrfTokenJson)
+	if dateErr != nil {
+		errorLog("获取证书详情接口调用异常：", dateErr)
+		return ""
+	}
 	return dataMap["csrf_token"].(string)
 }
 
@@ -233,7 +236,10 @@ func certList() (certInfoMap map[int]CertInfo) {
 		errorLog("获取证书列表接口调用异常")
 		return nil
 	}
-	data, _ := getResponseData(responseJson)
+	data, err := getResponseData(responseJson)
+	if err != nil {
+		errorLog("获取证书详情接口调用异常：", err)
+	}
 	nodes := data["nodes"].([]interface{})
 	for i := range nodes {
 		node := nodes[i].(map[string]interface{})
@@ -319,8 +325,10 @@ func getCert(certId int) (domain string, crt string) {
 		errorLog("获取证书详情接口调用异常，可能是证书ID不存在")
 		return "", ""
 	}
-	data, _ := getResponseData(getCertJson)
-	fmt.Println(data)
+	data, dateErr := getResponseData(getCertJson)
+	if dateErr != nil {
+		errorLog("获取证书详情接口调用异常：", dateErr)
+	}
 	acme := data["acme"].(map[string]interface{})
 	domains := acme["domains"].([]interface{})
 	for i := range domains {
