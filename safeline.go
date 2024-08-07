@@ -15,6 +15,8 @@ import (
 )
 import netUrl "net/url"
 
+var version = "v0.1"
+
 // 是否启用 debug
 var debugSwitch = false
 
@@ -147,11 +149,21 @@ func getResponseData(responseJson string) (data map[string]interface{}, dateErr 
 	}
 
 	responseMap := responseInfo.(map[string]interface{})
+	repDataMsg := responseMap["msg"]
+	fmt.Println("repDataMsg: ", repDataMsg)
+	if repDataMsg != nil {
+		if repDataMsg != "" {
+			debugLog(repDataMsg)
+			return nil, repDataMsg.(string)
+		}
+	}
+
 	repDataErr := responseMap["err"]
 	if repDataErr != nil {
 		debugLog(repDataErr)
 		return nil, repDataErr.(string)
 	}
+
 	repData := responseMap["data"]
 	if repData == nil {
 		return nil, nil
@@ -192,12 +204,15 @@ func login(csrfToken string, loginUser string, loginPassword string) {
 
 	loginRequestJson, jsonErr := json.Marshal(&loginRequest)
 	if jsonErr != nil {
-		errorLog("登录接口JSON解析异常：%s", jsonErr)
+		errorLog("登录接口JSON解析异常：", jsonErr)
 		return
 	}
 
 	responseJson := post("/api/open/auth/login", string(loginRequestJson))
-	data, _ := getResponseData(responseJson)
+	data, dateErr := getResponseData(responseJson)
+	if dateErr != nil {
+		errorLog("登录接口调用失败：", dateErr)
+	}
 	jwt := data["jwt"].(string)
 	baseJwt = "Bearer " + jwt
 }
@@ -287,7 +302,7 @@ func certUpdate(certId int, baseCertCrtPath string, baseCertKeyPath string) bool
 
 	certUpdateRequestJson, jsonErr := json.Marshal(&certInfo)
 	if jsonErr != nil {
-		errorLog("更新证书接口JSON解析异常：%s", jsonErr)
+		errorLog("更新证书接口JSON解析异常：", jsonErr)
 		return false
 	}
 
@@ -305,7 +320,7 @@ func getCert(certId int) (domain string, crt string) {
 		return "", ""
 	}
 	data, _ := getResponseData(getCertJson)
-
+	fmt.Println(data)
 	acme := data["acme"].(map[string]interface{})
 	domains := acme["domains"].([]interface{})
 	for i := range domains {
@@ -327,6 +342,10 @@ func getCertInfo(certId int) (domain string, issuer string, validBefore string, 
 }
 
 func main() {
+	fmt.Println("====================================")
+	fmt.Println("长亭雷池WAF站点证书同步工具 ", version)
+	fmt.Println("====================================")
+	fmt.Println("")
 	//加载.env文件
 	err := godotenv.Load(".env")
 	if err != nil {
