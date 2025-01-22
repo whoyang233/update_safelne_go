@@ -23,8 +23,8 @@ var debugSwitch = false
 // 全局服务 URL
 var baseServerUrl string
 
-// 登录后的 JWT
-var baseJwt any
+// API TOKEN
+var apiToken string
 
 // 获取 client 客户端
 func getClient() *http.Client {
@@ -56,9 +56,9 @@ func getRequest(path string, method string, body any) (request http.Request, url
 		},
 	}
 
-	//拼接登录 jwt
-	if baseJwt != nil {
-		request.Header.Set("authorization", baseJwt.(string))
+	//拼接api token
+	if apiToken != "" {
+		request.Header.Set("X-SLCE-API-TOKEN", apiToken)
 	}
 
 	//拼接请求体
@@ -179,45 +179,6 @@ func readFile(filePath string) any {
 		return nil
 	}
 	return string(file)
-}
-
-// 1、获取 csrf_token
-func getCsrfToken() string {
-	csrfTokenJson, statusCode := get("/api/open/auth/csrf")
-	if statusCode != 200 {
-		errorLog("获取获取csrf_token接口调用异常")
-		return ""
-	}
-	dataMap, dateErr := getResponseData(csrfTokenJson)
-	if dateErr != nil {
-		errorLog("获取证书详情接口调用异常：", dateErr)
-		return ""
-	}
-	return dataMap["csrf_token"].(string)
-}
-
-// 2、登录
-func login(csrfToken string, loginUser string, loginPassword string) {
-
-	loginRequest := struct {
-		Username  string `json:"username"`
-		Password  string `json:"password"`
-		CsrfToken string `json:"csrf_token"`
-	}{loginUser, loginPassword, csrfToken}
-
-	loginRequestJson, jsonErr := json.Marshal(&loginRequest)
-	if jsonErr != nil {
-		errorLog("登录接口JSON解析异常：", jsonErr)
-		return
-	}
-
-	responseJson := post("/api/open/auth/login", string(loginRequestJson))
-	data, dateErr := getResponseData(responseJson)
-	if dateErr != nil {
-		errorLog("登录接口调用失败：", dateErr)
-	}
-	jwt := data["jwt"].(string)
-	baseJwt = "Bearer " + jwt
 }
 
 // 证书对象
@@ -367,15 +328,12 @@ func main() {
 	if baseServerUrl == "" {
 		baseServerUrl = "https://127.0.0.1:9443"
 	}
-	loginUser := os.Getenv("LOGIN_USER")
-	if loginUser == "" {
-		loginUser = "admin"
-	}
-	loginPassword := os.Getenv("LOGIN_PASSWORD")
-	if loginPassword == "" {
-		fmt.Println("长亭雷池WAF登录密码不能为空")
+	apiToken = os.Getenv("API_TOKEN")
+	if apiToken == "" {
+		fmt.Println("长亭雷池WAF API TOKEN不能为空")
 		return
 	}
+
 	certIdSrt := os.Getenv("CERT_ID")
 	if certIdSrt == "" {
 		certIdSrt = "1"
@@ -391,10 +349,6 @@ func main() {
 		fmt.Println("长亭雷池WAF站点新证书私钥地址不能为空")
 		return
 	}
-
-	//调用接口
-	csrfToken := getCsrfToken()
-	login(csrfToken, loginUser, loginPassword)
 
 	updateResult := certUpdate(certId, certCrtPath, certKeyPath)
 	if updateResult == true {
