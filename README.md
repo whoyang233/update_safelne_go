@@ -9,9 +9,7 @@
 #服务器IP地址
 BASE_SERVER_URL=https://127.0.0.1:9443
 #长亭雷池WAF用户名
-LOGIN_USER=admin
-#长亭雷池WAF密码
-LOGIN_PASSWORD=12345
+API_TOKEN=
 #证书的 ID，可以通过页面开发者工具查看
 CERT_ID=1
 #新的证书路径
@@ -24,8 +22,6 @@ CERT_KEY_PATH=/live/cert/private.pem
 ./update_safelne
 ```
 ## 调用的接口
-    1、获取csrf_token
-    2、登录
     3、获取证书列表
     4、更新证书
     5、获取证书详情
