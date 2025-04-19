@@ -1,10 +1,9 @@
-package main
+package safeline
 
 import (
 	"crypto/tls"
 	"encoding/json"
 	"fmt"
-	"github.com/joho/godotenv"
 	"io"
 	"log"
 	"net/http"
@@ -15,8 +14,6 @@ import (
 )
 import netUrl "net/url"
 
-var version = "v0.1"
-
 // 是否启用 debug
 var debugSwitch = false
 
@@ -25,6 +22,12 @@ var baseServerUrl string
 
 // API TOKEN
 var apiToken string
+
+type ServerConfig struct {
+	Url      string
+	ApiToken string
+	CertId   string
+}
 
 // 获取 client 客户端
 func getClient() *http.Client {
@@ -310,34 +313,33 @@ func getCertInfo(certId int) (domain string, issuer string, validBefore string, 
 	return domain, issuer, validBefore, crt
 }
 
-func main() {
+func Run(serverConfig ServerConfig, debug bool, version string) {
 	fmt.Println("====================================")
 	fmt.Println("长亭雷池WAF站点证书同步工具 ", version)
 	fmt.Println("====================================")
 	fmt.Println("")
-	//加载.env文件
-	err := godotenv.Load(".env")
-	if err != nil {
-		errorLog("加载.env文件异常", err)
-	}
 
 	//加载环境变量的参数
-	debugSwitch, _ = strconv.ParseBool(os.Getenv("DEBUG"))
+	debugSwitch = debug
 
-	baseServerUrl = os.Getenv("BASE_SERVER_URL")
+	baseServerUrl = serverConfig.Url
+	apiToken = serverConfig.ApiToken
+	certIdSrt := serverConfig.CertId
+
 	if baseServerUrl == "" {
+		fmt.Println("长亭雷池WAF 服务URL 地址为填充，默认填充：https://127.0.0.1:9443")
 		baseServerUrl = "https://127.0.0.1:9443"
 	}
-	apiToken = os.Getenv("API_TOKEN")
+
 	if apiToken == "" {
 		fmt.Println("长亭雷池WAF API TOKEN不能为空")
 		return
 	}
 
-	certIdSrt := os.Getenv("CERT_ID")
 	if certIdSrt == "" {
 		certIdSrt = "1"
 	}
+
 	certId, _ := strconv.Atoi(certIdSrt)
 	certCrtPath := os.Getenv("CERT_CRT_PATH")
 	if certCrtPath == "" {
