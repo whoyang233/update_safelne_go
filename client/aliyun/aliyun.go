@@ -167,7 +167,7 @@ func uploadCert() int64 {
 	if err != nil {
 		var sdkError = &tea.SDKError{}
 		sdkError = err.(*tea.SDKError)
-		fmt.Printf("上传证书发生异常: ", tea.StringValue(sdkError.Message))
+		utils.ErrorLog("上传证书发生异常: ", tea.StringValue(sdkError.Message))
 		os.Exit(-1)
 	}
 	body := uploadUserCertificeteResponse.Body
@@ -191,7 +191,7 @@ func getCertInfo(certId int64) (certIdStr string, certExpired bool) {
 	if err != nil {
 		var sdkError = &tea.SDKError{}
 		sdkError = err.(*tea.SDKError)
-		fmt.Printf("获取证书详情发生异常: ", tea.StringValue(sdkError.Message))
+		utils.ErrorLog("获取证书详情发生异常: ", tea.StringValue(sdkError.Message))
 		os.Exit(-1)
 	}
 
@@ -211,7 +211,7 @@ func deleteCert(certId int64) bool {
 	if err != nil {
 		var sdkError = &tea.SDKError{}
 		sdkError = err.(*tea.SDKError)
-		fmt.Printf("删除证书发生异常: ", tea.StringValue(sdkError.Message))
+		utils.ErrorLog("删除证书发生异常: ", tea.StringValue(sdkError.Message))
 		return false
 	}
 	return true
